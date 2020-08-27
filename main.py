@@ -1,42 +1,49 @@
 import socket
 from threading import Thread
 import json
-
+import io
+from PIL import Image
+import numpy as np
 
 TCP_IP = "127.0.0.1"
 TCP_PORT = 5005
 
+IMAGE_DIMS = (80, 80, 3)
+
 
 class LearningThread(Thread):
-    def __init__(self, conn, addr):
-        print("accepting new connection ", conn)
+    def __init__(self, conn, address):
         Thread.__init__(self)
         self.conn = conn
-        self.addr = addr
-
-    def construct_move(self) -> bytes:
-        return bytes(json.dumps({'rotation': 0, 'pedal': 1}), 'utf-8')
+        self.address = address
 
     def run(self):
-        raw_level_data = self.conn.recv(32768)
-        level_data = json.loads(raw_level_data.decode('utf-8'))
-        print("level data", level_data)
+        inputs = []
+        images = []
 
         while True:
-            move = self.construct_move()
-            self.conn.sendall(move)
-            self.conn.sendall(b'\r\n')
-
-            data = self.conn.recv(32768)
-
-            if not data:
-                self.conn.close()
+            game_input = json.loads(self.conn.recv(4096))
+            if game_input == 0:
                 break
-            else:
-                game_state = json.loads(data.decode('utf-8'))
+            np_game_input = np.array([game_input["rotation"], game_input["pedal"]])
+            inputs.append(np_game_input)
 
-        self.conn.close()
+            image_file_size = int(self.conn.recv(8192))
+            data = bytearray()
+            while len(data) < image_file_size:
+                more_data = self.conn.recv(8192)
+                data += more_data
+
+            image = Image.open(io.BytesIO(data))
+            (w, h, d) = IMAGE_DIMS
+            image = image.resize((w, h), Image.BILINEAR)
+            np_image = np.array(image)
+            images.append(np_image)
+
+        print("inputs", np.array(inputs))
+        print("images", np.array(images))
         print("end of connection")
+        self.conn.close()
 
 
 def main():
@@ -48,14 +55,15 @@ def main():
     print("listening")
 
     while True:
-        conn, addr = sock.accept()
+        conn, address = sock.accept()
 
-        learning_thread = LearningThread(conn, addr)
-        learning_thread.start()
-        learning_thread.join()
+        learning_thread = LearningThread(conn, address,)
+        learning_thread.run()
+
+        break
 
     sock.close()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
