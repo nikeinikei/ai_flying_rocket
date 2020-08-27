@@ -40,8 +40,11 @@ class LearningThread(Thread):
             np_image = np.array(image)
             images.append(np_image)
 
-        print("inputs", np.array(inputs))
-        print("images", np.array(images))
+        inputs = np.array(inputs)
+        images = np.array(images)
+
+        np.save("inputs.npy", inputs)
+        np.save("images.npy", images)
         print("end of connection")
         self.conn.close()
 
