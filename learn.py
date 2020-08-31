@@ -1,12 +1,13 @@
 import numpy as np
 import tensorflow as tf
+from config import IMAGES_FILE_NAME, INPUTS_FILE_NAME
 
 
 def main():
-    images = np.load("images.npy")
+    images = np.load(IMAGES_FILE_NAME)
     (time_steps, _, _, _) = images.shape
     images = images.reshape((time_steps, -1))
-    inputs = np.load("inputs.npy")
+    inputs = np.load(INPUTS_FILE_NAME)
 
     batch_images = tf.convert_to_tensor(np.array([images]), dtype=float)
     batch_inputs = tf.convert_to_tensor(np.array([inputs]), dtype=float)
