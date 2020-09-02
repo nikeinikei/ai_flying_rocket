@@ -4,13 +4,8 @@ from config import IMAGES_FILE_NAME, INPUTS_FILE_NAME
 
 
 def main():
-    images = np.load(IMAGES_FILE_NAME)
-    (time_steps, _, _, _) = images.shape
-    images = images.reshape((time_steps, -1))
-    inputs = np.load(INPUTS_FILE_NAME)
-
-    batch_images = tf.convert_to_tensor(np.array([images]), dtype=float)
-    batch_inputs = tf.convert_to_tensor(np.array([inputs]), dtype=float)
+    images = tf.convert_to_tensor(np.load(IMAGES_FILE_NAME), dtype=float)
+    inputs = tf.convert_to_tensor(np.load(INPUTS_FILE_NAME), dtype=float)
 
     model = tf.keras.models.Sequential([
         tf.keras.layers.LSTM(16, return_sequences=True),
@@ -20,12 +15,15 @@ def main():
     ])
     model.compile(
         loss=tf.keras.losses.mean_squared_error,
-        optimizer=tf.keras.optimizers.Adam(1e-4),
+        optimizer=tf.keras.optimizers.Adam(),
         metrics=["accuracy"]
     )
 
-    model.fit(x=batch_images, y=batch_inputs, epochs=300)
+    model.fit(x=images, y=inputs, epochs=10)
 
 
 if __name__ == '__main__':
+    for gpu in tf.config.experimental.list_physical_devices("GPU"):
+        tf.config.experimental.set_memory_growth(gpu, True)
+        
     main()
