@@ -13,9 +13,9 @@ def main():
     batch_inputs = tf.convert_to_tensor(np.array([inputs]), dtype=float)
 
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(16, return_sequences=True)),
-        tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(16, return_sequences=True)),
-        tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(4, return_sequences=True)),
+        tf.keras.layers.LSTM(16, return_sequences=True),
+        tf.keras.layers.LSTM(16, return_sequences=True),
+        tf.keras.layers.LSTM(4, return_sequences=True),
         tf.keras.layers.Dense(2)
     ])
     model.compile(
