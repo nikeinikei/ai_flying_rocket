@@ -19,7 +19,7 @@ def main():
         tf.keras.layers.Dense(2)
     ])
     model.compile(
-        loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+        loss=tf.keras.losses.mean_squared_error,
         optimizer=tf.keras.optimizers.Adam(1e-4),
         metrics=["accuracy"]
     )
