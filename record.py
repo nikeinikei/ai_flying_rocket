@@ -10,7 +10,7 @@ from config import INPUTS_FILE_NAME, IMAGES_FILE_NAME
 TCP_IP = "127.0.0.1"
 TCP_PORT = 5005
 
-WRITE_TO_DISK = False
+WRITE_TO_DISK = True
 
 
 class LearningThread(Thread):
@@ -21,13 +21,19 @@ class LearningThread(Thread):
         self.delimiter = b'\n'
         self.delimiter_length = len(self.delimiter)
         self.bytes = bytearray()
+        if os.path.exists(INPUTS_FILE_NAME) and os.path.exists(IMAGES_FILE_NAME):
+            self.inputs = np.load(INPUTS_FILE_NAME)
+            self.images = np.load(IMAGES_FILE_NAME)
+        else:
+            self.inputs = None
+            self.images = None
 
     def receive_until_delimiter(self):
         while True:
             try:
                 index = self.bytes.index(self.delimiter)
                 data = self.bytes[0:index]
-                self.bytes = self.bytes[(index+1):]
+                self.bytes = self.bytes[(index+1):]     # +1 to skip the delimiter, since it's not supposed to carry any data with it
                 return data
             except ValueError:
                 self.bytes += self.conn.recv(8192)
@@ -40,14 +46,32 @@ class LearningThread(Thread):
         self.bytes = self.bytes[length:]
         return fixed_amount
 
-    def run(self):
-        if os.path.exists(INPUTS_FILE_NAME) and os.path.exists(IMAGES_FILE_NAME):
-            all_inputs = np.load(INPUTS_FILE_NAME)
-            all_images = np.load(IMAGES_FILE_NAME)
+    def add_recording(self, inputs, images):
+        if self.inputs is None and self.images is None:
+            self.inputs = np.array(inputs)
+            self.images = np.array(images)
         else:
-            all_inputs = np.array([])
-            all_images = np.array([])
+            timesteps = self.inputs.shape[1]
+            timesteps2 = inputs.shape[1]
 
+            if timesteps > timesteps2:
+                diff = timesteps - timesteps2
+                inputs = np.pad(inputs, [(0, 0), (0, diff), (0, 0)])
+                images = np.pad(images, [(0, 0), (0, diff), (0, 0)])
+            else:
+                diff = timesteps2 - timesteps
+                self.inputs = np.pad(self.inputs, [(0, 0), (0, diff), (0, 0)])
+                self.images = np.pad(self.images, [(0, 0), (0, diff), (0, 0)])
+            
+            self.inputs = np.append(self.inputs, inputs, axis=0)
+            self.images = np.append(self.images, images, axis=0)
+
+    def save_recordins(self):
+        if not self.inputs is None and not self.images is None:
+            np.save(INPUTS_FILE_NAME, self.inputs)
+            np.save(IMAGES_FILE_NAME, self.images)
+
+    def run(self):
         inputs = []
         images = []
 
@@ -56,17 +80,19 @@ class LearningThread(Thread):
             game_input = json.loads(data)
             if game_input == "won":
                 print("won")
-                print("len(inputs)", len(inputs))
-                print("len(images)", len(images))
-                all_inputs = np.append(all_inputs, np.array(inputs))
-                all_images = np.append(all_images, np.array(images))
+                self.add_recording(
+                    np.array([inputs]), 
+                    np.array([images])
+                )
+                print("inputs.shape", self.inputs.shape)
+                print("images.shape", self.images.shape)
                 inputs.clear()
                 images.clear()
                 continue
             elif game_input == "lost":
                 print("lost")
-                inputs = []
-                images = []
+                inputs.clear()
+                images.clear()
                 continue
             elif game_input == "quit":
                 print("quit")
@@ -80,13 +106,13 @@ class LearningThread(Thread):
 
             image = Image.open(io.BytesIO(data))
             np_image = np.array(image)
+            np_image = np_image.reshape((-1,))
             images.append(np_image)
 
         if WRITE_TO_DISK:
-            np.save("inputs.npy", all_inputs)
-            np.save("images.npy", all_images)
-        print("end of connection")
+            self.save_recordins()
         self.conn.close()
+        print("end of connection")
 
 
 def main():
