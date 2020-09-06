@@ -9,14 +9,9 @@ CHECKPOINTS_PATH = "saved/cp.ckpt"
 CHECKPOINTS_DIR = os.path.dirname(CHECKPOINTS_PATH)
 
 
-def main():
-    images = tf.convert_to_tensor(np.load(IMAGES_FILE_NAME), dtype=float)
-    inputs = tf.convert_to_tensor(np.load(INPUTS_FILE_NAME), dtype=float)
-
+def create_model():
     model = tf.keras.models.Sequential([
-        tf.keras.layers.LSTM(32, return_sequences=True),
-        tf.keras.layers.LSTM(32, return_sequences=True),
-        tf.keras.layers.LSTM(16, return_sequences=True),
+        tf.keras.layers.LSTM(2, return_sequences=True),
         tf.keras.layers.Dense(2)
     ])
     model.compile(
@@ -28,6 +23,15 @@ def main():
     if latest:
         print("continuing from checkpoint")
         model.load_weights(latest)
+
+    return model
+
+
+def main():
+    images = tf.convert_to_tensor(np.load(IMAGES_FILE_NAME), dtype=float)
+    inputs = tf.convert_to_tensor(np.load(INPUTS_FILE_NAME), dtype=float)
+
+    model = create_model()
 
     print("using tensorflow version: ", tf.version.VERSION)
 
@@ -44,7 +48,7 @@ def main():
             x=images, 
             y=inputs,
             validation_split=0.2,
-            epochs=300,
+            epochs=10,
             callbacks=[cp_callback]
         )
         
