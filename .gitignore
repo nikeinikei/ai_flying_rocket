@@ -1,5 +1,6 @@
 __pycache__
 .idea
+.vscode
 saved
 inputs.npy
 images.npy
