@@ -46,9 +46,17 @@ class ConnectionHandler(object):
         else:
             self.images = np.append(self.images, image, axis=0)
 
-    def decision(self, x: float) -> float:
+    def pedal_decision(self, x: float) -> float:
         if x >= 0.5:
             return 1.0
+        else:
+            return 0.0
+
+    def rotation_decision(self, x: float) -> float:
+        if x >= 0.67:
+            return 1.0
+        elif x <= -0.67:
+            return -1.0
         else:
             return 0.0
 
@@ -58,8 +66,8 @@ class ConnectionHandler(object):
         rotation = float(last_prediction[0])
         pedal = float(last_prediction[1])
         game_input = {
-            "rotation": self.decision(rotation),
-            "pedal": self.decision(pedal)
+            "rotation": self.rotation_decision(rotation),
+            "pedal": self.pedal_decision(pedal)
         }
         self.conn.send(bytes(json.dumps(game_input) + "\n", "utf-8"))
 
