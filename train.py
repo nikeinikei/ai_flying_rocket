@@ -9,15 +9,16 @@ CHECKPOINTS_PATH = "saved/cp.ckpt"
 CHECKPOINTS_DIR = os.path.dirname(CHECKPOINTS_PATH)
 
 
-def create_model():
+def create_model(train=True):
     model = tf.keras.models.Sequential([
         tf.keras.layers.LSTM(2, return_sequences=True),
         tf.keras.layers.Dense(2)
     ])
-    model.compile(
-        loss=tf.keras.losses.mean_squared_error,
-        optimizer=tf.keras.optimizers.Adam()
-    )
+    if train:
+        model.compile(
+            loss=tf.keras.losses.mean_squared_error,
+            optimizer=tf.keras.optimizers.Adam()
+        )
 
     latest = tf.train.latest_checkpoint(CHECKPOINTS_DIR)
     if latest:
