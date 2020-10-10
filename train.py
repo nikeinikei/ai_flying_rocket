@@ -11,7 +11,8 @@ CHECKPOINTS_DIR = os.path.dirname(CHECKPOINTS_PATH)
 
 def create_model(train=True):
     model = tf.keras.models.Sequential([
-        tf.keras.layers.LSTM(2, return_sequences=True),
+        tf.keras.layers.LSTM(32, return_sequences=True),
+        tf.keras.layers.LSTM(32, return_sequences=True),
         tf.keras.layers.Dense(2)
     ])
     if train:
@@ -49,7 +50,7 @@ def main():
             x=images, 
             y=inputs,
             validation_split=0.2,
-            epochs=10,
+            epochs=200,
             callbacks=[cp_callback]
         )
         
@@ -68,5 +69,5 @@ def main():
 if __name__ == '__main__':
     for gpu in tf.config.experimental.list_physical_devices("GPU"):
         tf.config.experimental.set_memory_growth(gpu, True)
-        
+    
     main()
