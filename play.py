@@ -6,7 +6,7 @@ from train import create_model
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-
+from config import IMAGES_FILE_NAME
 
 TCP_IP = "127.0.0.1"
 TCP_PORT = 5006
@@ -53,9 +53,9 @@ class ConnectionHandler(object):
             return 0.0
 
     def rotation_decision(self, x: float) -> float:
-        if x >= 0.67:
+        if x >= 0.35:
             return 1.0
-        elif x <= -0.67:
+        elif x <= -0.35:
             return -1.0
         else:
             return 0.0
@@ -65,6 +65,7 @@ class ConnectionHandler(object):
         last_prediction = prediction[0][-1]
         rotation = float(last_prediction[0])
         pedal = float(last_prediction[1])
+        print("rotation, pedal", rotation, pedal)
         game_input = {
             "rotation": self.rotation_decision(rotation),
             "pedal": self.pedal_decision(pedal)
@@ -88,11 +89,13 @@ class ConnectionHandler(object):
             self.add_image(np.array([np_image]))
             self.send_prediction()
 
-        self.conn.close()                    
+        self.conn.close()
 
 
 def main():
     model = create_model()
+    images = np.load(IMAGES_FILE_NAME)
+    model(tf.convert_to_tensor(np.array([images[0]]), dtype=float))
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((TCP_IP, TCP_PORT))
